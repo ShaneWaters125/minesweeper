@@ -1,6 +1,8 @@
 package org.example;
 
+import java.security.spec.ECField;
 import java.util.ArrayList;
+import java.util.InputMismatchException;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -10,6 +12,7 @@ public class Grid {
     private final Tile[][] tiles;
     private Scanner input = new Scanner(System.in);
 
+    private boolean lost = false;
     private ArrayList<Tile> checked = new ArrayList<>();
 
     public Grid(int cols, int rows){
@@ -38,69 +41,173 @@ public class Grid {
 
     private void playGame(){
         input = new Scanner(System.in);
-        printGrid();
-        System.out.println("Type C: Clear Tile, F: Flag Tile");
+        printGrid(false);
+        System.out.println("Type C: Clear Tile, F: Flag Tile, U: Unflag Tile");
         String decision = input.nextLine();
         switch (decision.toUpperCase()) {
             case "F" -> flagTile();
             case "C" -> clearTile();
+            case "U" -> removeFlag();
             default -> System.out.println("");
         }
     }
 
-    private void flagTile(){
-        System.out.println("Enter the tiles x coordinate you would like to flag: ");
-        int x = input.nextInt();
-        System.out.println("Enter the tiles y coordinate you would like to flag: ");
-        int y = input.nextInt();
-        tiles[x][y].setFlagged(true);
-    }
+    private void removeFlag(){
+        try{
+            System.out.println("Enter the tiles x coordinate you would like to unflag: ");
+            int y = input.nextInt();
+            System.out.println("Enter the tiles y coordinate you would like to unflag: ");
+            int x = input.nextInt();
 
-    private void clearTile(){
-        System.out.println("Enter the tiles x coordinate you would like to clear: ");
-        int x = input.nextInt();
-        System.out.println("Enter the tiles y coordinate you would like to clear: ");
-        int y = input.nextInt();
-
-        Tile tile = tiles[x][y];
-
-        if(tile.getType() == TileENUM.BOMB){
-            System.out.println("GAME OVER!");
-        }else{
-            autoClear(x, y);
-            System.out.println("");
+            if(checkValidInput(x, y)){
+                tiles[x][y].setFlagged(false);
+            }else{
+                System.out.println("Invalid Input!");
+                removeFlag();
+            }
+        } catch (InputMismatchException e){
+            System.out.println("Invalid Input!");
+            input = new Scanner(System.in);
         }
     }
 
+    private void flagTile(){
+        try{
+            System.out.println("Enter the tiles x coordinate you would like to flag: ");
+            int y = input.nextInt();
+            System.out.println("Enter the tiles y coordinate you would like to flag: ");
+            int x = input.nextInt();
+
+            if(checkValidInput(x, y)){
+                tiles[x][y].setFlagged(true);
+            }else{
+                System.out.println("Invalid Input!");
+                flagTile();
+            }
+        } catch (InputMismatchException e){
+            System.out.println("Invalid Input!");
+            input = new Scanner(System.in);
+        }
+
+    }
+
+    private void clearTile(){
+        try{
+            System.out.println("Enter the tiles x coordinate you would like to clear: ");
+            int y = input.nextInt();
+            System.out.println("Enter the tiles y coordinate you would like to clear: ");
+            int x = input.nextInt();
+
+            if(checkValidInput(x, y)){
+                Tile tile = tiles[x][y];
+
+                if(tile.getType() == TileENUM.BOMB){
+                    System.out.println("GAME OVER!");
+                    lost = true;
+                    printGrid(true);
+                }else{
+                    autoClear(x, y);
+                    System.out.println("");
+                }
+            } else{
+                System.out.println("Invalid Input!");
+                clearTile();
+            }
+        } catch (InputMismatchException e){
+            System.out.println("Invalid Input!");
+            input = new Scanner(System.in);
+        }
+
+    }
+
+    private boolean checkValidInput(int x, int y){
+        return x >= 0 && x < cols && y >= 0 && y < rows;
+    }
+
     private void autoClear(int x, int y){
-        boolean isBomb = false;
+        boolean nearBomb = false;
         if(tiles[x][y].getType() != TileENUM.BOMB){
             tiles[x][y].setCleared(true);
             Tile tile = new Tile(x, y, TileENUM.EMPTY);
             checked.add(tile);
 
+            //To make sure more tiles than intended are revealed, we must check to see if the tile borders a bomb.
+            for(int col = x-1; col <= x+1; col++){
+                for(int row = y-1; row <= y+1; row++){
+                    if(!(col < 0 || row < 0) && !(col > cols-1 || row > rows-1)){
+                        if(tiles[col][row].getType() == TileENUM.BOMB){
+                            nearBomb = true;
+                        }
+                    }
+                }
+            }
+
+            //For every tile around the current tile, reveal the tile if it's not a bomb and recursively call this method with neighbouring tiles of bomb count 0.
             for(int col = x-1; col <= x+1; col++){
                 for(int row = y-1; row <= y+1; row++){
                     if(!(col < 0 || row < 0) && !(col > cols-1 || row > rows-1)){
 
                         Tile newTile = new Tile(col, row, TileENUM.EMPTY);
 
-                        if(tiles[col][row].getType() == TileENUM.BOMB){
-                            isBomb = true;
-                        }
 
-                        if(/*tiles[col][row].getType() != TileENUM.BOMB &&*/ !isBomb){
+                        if(!nearBomb){
                             tiles[col][row].setCleared(true);
                         }
 
-                        if(calcBombs(row, col) == 0 && !checked.contains(newTile)){
+                        if(calcBombs(col, row) == 0 && !checked.contains(newTile)){
                             autoClear(col, row);
                         }
+
                     }
                 }
             }
+
         }
     }
+
+//    private void autoClear(int x, int y){
+//        boolean nearBomb = false;
+//        if(tiles[x][y].getType() != TileENUM.BOMB){
+//            tiles[x][y].setCleared(true);
+//            Tile tile = new Tile(x, y, TileENUM.EMPTY);
+//            checked.add(tile);
+//
+//            //To make sure more tiles than intended are revealed, we must check to see if the tile borders a bomb.
+//            for(int col = x-1; col <= x+1; col++){
+//                for(int row = y-1; row <= y+1; row++){
+//                    if(!(col < 0 || row < 0) && !(col > cols-1 || row > rows-1)){
+//                        if(tiles[col][row].getType() == TileENUM.BOMB){
+//                            nearBomb = true;
+//                        }
+//                    }
+//                }
+//            }
+//
+//            //For every tile around the current tile, reveal the tile if it's not a bomb and recursively call this method with neighbouring tiles of bomb count 0.
+//            for(int col = x-1; col <= x+1; col++){
+//                for(int row = y-1; row <= y+1; row++){
+//                    if(!(col < 0 || row < 0) && !(col > cols-1 || row > rows-1)){
+//
+//                        Tile newTile = new Tile(col, row, TileENUM.EMPTY);
+//
+////                        if(tiles[col][row].getType() == TileENUM.BOMB){
+////                            nearBomb = true;
+////                        }
+//
+//                        if(/*tiles[col][row].getType() != TileENUM.BOMB &&*/ !nearBomb){
+//                            tiles[col][row].setCleared(true);
+//                        }
+//
+//                        if(calcBombs(row, col) == 0 && !checked.contains(newTile)){
+//                            autoClear(col, row);
+//                        }
+//
+//                    }
+//                }
+//            }
+//
+//        }
+//    }
 
     public int getCols() {
         return cols;
@@ -119,6 +226,9 @@ public class Grid {
     }
 
     private boolean checkWin(){
+        if(lost){
+            return false;
+        }
         Tile tile;
         for(int col = 0; col < cols; col++){
             for(int row = 0; row < rows; row++){
@@ -128,6 +238,7 @@ public class Grid {
                 }
             }
         }
+        System.out.println("You WON!");
         return false;
     }
 
@@ -136,7 +247,7 @@ public class Grid {
         for(int x = col-1; x <= col+1; x++){
             for(int y = row-1; y <= row+1; y++){
                 if(!(x < 0 || y < 0) && !(x > cols-1 || y > rows-1)){
-                    if(tiles[y][x].getType() == TileENUM.BOMB){
+                    if(tiles[x][y].getType() == TileENUM.BOMB){
                         bombTotal += 1;
                     }
                 }
@@ -145,13 +256,25 @@ public class Grid {
         return bombTotal;
     }
 
-    public void printGrid(){
+    public void printGrid(boolean showBombs){
         Tile tile;
-        int x, y;
+        System.out.print("    ");
+        for(int x = 0; x<rows; x++){
+            if(x < 10){
+                System.out.print( x + "  ");
+            } else if(x < 100){
+                System.out.print( x + " ");
+            }
+        }
+        System.out.println();
         for(int col = 0; col <  cols ; col++){ //cols
+            System.out.print(col);
+            if(col < 10){
+                System.out.print(" ");
+            }
             for(int row = 0; row < rows; row++){ //rows
                 System.out.print("  ");
-                tile = tiles[row][col];
+                tile = tiles[col][row]; // change back to row, col
                 if(tile.isFlagged()){
                     System.out.print("F");
                 }else{
@@ -161,7 +284,11 @@ public class Grid {
                         if(tile.getType() == TileENUM.EMPTY){
                             System.out.print("-");
                         } else{
-                            System.out.print("B");
+                            if(showBombs){
+                                System.out.print("B");
+                            } else{
+                                System.out.print("-");
+                            }
                         }
                     }
                 }
