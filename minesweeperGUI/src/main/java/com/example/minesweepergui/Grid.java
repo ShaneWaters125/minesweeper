@@ -11,12 +11,16 @@ import java.util.Scanner;
 public class Grid {
 
     private static int cols, rows;
+
     private Pane root; //Parent panel
     private static Tile[][] tiles; //2d array of all the tiles
     private static Scanner input = new Scanner(System.in);
 
     private static boolean lost = false; //Boolean which denotes if the game has been lost or not.
     private static ArrayList<Tile> checked = new ArrayList<>(); //Array of checked tiles so when we recursively reveal tiles we don't ask the same tile twice.
+
+    private int bombTotal = 0;
+    public static int flagsLeft;
 
     /**
      *
@@ -40,12 +44,14 @@ public class Grid {
      * Also adds all the tiles to the parent panel for javaFX to display.
      */
     public void generateGrid(){
+        checked.clear();
         int rand = 0;
         for(int col = 0; col < cols; col++){
             for(int row = 0; row < rows; row++){
                 rand = (int) (Math.random()*5) + 1; //There is roughly 1 bomb every 4.85 tiles, so a close to 20% chance of a bomb.
                 Tile tile;
                 if(rand == 1){
+                    bombTotal += 1;
                     tile = new Tile(col, row, TileENUM.BOMB);
                     tiles[col][row] = tile;
                 } else{
@@ -56,6 +62,9 @@ public class Grid {
                 root.getChildren().add(tile);
             }
         }
+        //Setting the number of flags to the total number of bombs.
+        MinesweeperApplication.bombText.setText(Integer.toString(bombTotal));
+        flagsLeft = bombTotal;
     }
 
     /**

@@ -3,7 +3,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Rectangle;
@@ -45,6 +45,7 @@ public class Tile extends StackPane {
 
         //Assigns the border and value to the tile otherwise each tile has no UI representation.
         getChildren().addAll(border, value);
+
         setTranslateX(x * TILE_SIZE);
         setTranslateY(y * TILE_SIZE);
 
@@ -64,12 +65,16 @@ public class Tile extends StackPane {
             } else if(e.getButton() == MouseButton.SECONDARY){
                 //Flagging and unflagging.
                 if(value.getText().equals("F")){
+                    Grid.flagsLeft += 1;
+                    MinesweeperApplication.bombText.setText(Integer.toString(Grid.flagsLeft));
                     System.out.println("unflag");
                     unshow();
                 }else{
                     System.out.println("flag");
                     //Cant flag a tile which is already revealed / cleared.
-                    if(!isCleared){
+                    if(!isCleared && Grid.flagsLeft != 0){
+                        Grid.flagsLeft -= 1;
+                        MinesweeperApplication.bombText.setText(Integer.toString(Grid.flagsLeft));
                         show("F");
                     }
                 }
@@ -97,14 +102,23 @@ public class Tile extends StackPane {
     public void gameOver(){
         Dialog<Object> gameOverDialog = new Dialog<>();
         gameOverDialog.setTitle("Minesweeper");
-        gameOverDialog.setContentText("You LOST!");
+        gameOverDialog.setHeaderText("You LOST!");
+
+        Image image = new Image(MinesweeperApplication.class.getResource("Minesweeper_stoned.png").toExternalForm());
+        Pane pane = new Pane();
+        HBox hBox = new HBox();
+        hBox.setPrefSize(400, 400);
+        hBox.setBackground(new Background(new BackgroundImage(image, null, null, null, new BackgroundSize(50, 50, true, true, true, true))));
+        pane.getChildren().add(hBox);
+
+        gameOverDialog.getDialogPane().setContent(pane);
 
         gameOverDialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
 
         //Tells dialog to show and wait until a result is given which is when the user presses the close button.
         Optional<Object> result = gameOverDialog.showAndWait();
         result.ifPresent(retry -> {
-            System.exit(0);
+            MinesweeperApplication.startGame();
         });
     }
 
