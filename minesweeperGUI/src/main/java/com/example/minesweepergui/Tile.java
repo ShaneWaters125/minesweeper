@@ -104,7 +104,7 @@ public class Tile extends StackPane {
         gameOverDialog.setTitle("Minesweeper");
         gameOverDialog.setHeaderText("You LOST!");
 
-        Image image = new Image(MinesweeperApplication.class.getResource("Minesweeper_stoned.png").toExternalForm());
+        Image image = new Image(MinesweeperApplication.class.getResource("Minesweeper_stoned2.png").toExternalForm());
         Pane pane = new Pane();
         HBox hBox = new HBox();
         hBox.setPrefSize(400, 400);
@@ -126,6 +126,7 @@ public class Tile extends StackPane {
      * Opens up the game won dialog popup box.
      */
     public void gameWon(){
+        MinesweeperApplication.interrupted = true;
         Dialog<Object> gameOverDialog = new Dialog<>();
         gameOverDialog.setTitle("Minesweeper");
         gameOverDialog.setContentText("You WON!");

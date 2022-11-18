@@ -30,8 +30,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MinesweeperApplication extends Application {
 
     private static final int TILE_SIZE = 40; //Size of each tile (square).
-    private static int width; //Width of game window
-    private static int height; //Height of game window
+    private static int width = 0; //Width of game window
+    private static int height = 0; //Height of game window
+
+    private static int saveWidth = 10;
+    private static int saveHeight = 10;
 
     private static int X_TILES; //Number of tiles in x axis
     private static int Y_TILES; //Number of tiles in y axis
@@ -41,7 +44,7 @@ public class MinesweeperApplication extends Application {
     public static Text bombText = new Text(); //Number of flags left / bombs left to find
     public static Text timerText = new Text(); //Time passed
 
-    private static boolean interrupted; //Determines when to stop all threads
+    public static boolean interrupted; //Determines when to stop all threads
     private static ScheduledExecutorService executor; //Used to schedule threads
 
     @Override
@@ -60,8 +63,6 @@ public class MinesweeperApplication extends Application {
      * Starts the game
      */
     public static void startGame(){
-
-        
 
         //Set game window icon
         stage.getIcons().add(new Image(MinesweeperApplication.class.getResource("Minesweeper_face_new.png").toExternalForm()));
@@ -126,7 +127,7 @@ public class MinesweeperApplication extends Application {
         bombPane.getChildren().add(bombBackground);
 
         ////Bomb Text
-        bombText.setText("032");
+        bombText.setText("");
         bombText.setFill(Color.RED);
         bombText.setFont(Font.font("Geoslab703 Md Bt", FontWeight.BOLD, 48));
         bombPane.getChildren().add(bombText);
@@ -211,7 +212,7 @@ public class MinesweeperApplication extends Application {
 
         //Creating the buttons for the dialog window.
         ButtonType startGameType = new ButtonType("Start", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(startGameType, ButtonType.CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(startGameType/*, ButtonType.CLOSE*/);
 
         //Creating a grid to layout the texts and input boxes.
         GridPane grid = new GridPane();
@@ -221,8 +222,10 @@ public class MinesweeperApplication extends Application {
 
         TextField columns = new TextField();
         columns.setPromptText("Columns");
+        columns.setText(Integer.toString(saveWidth));
         TextField rows = new TextField();
         rows.setPromptText("Rows");
+        rows.setText(Integer.toString(saveHeight));
 
         //Adding JavaFX objects to the grid.
         grid.add(new Label("No. Columns:"), 0, 0);
@@ -237,10 +240,10 @@ public class MinesweeperApplication extends Application {
 
 
         Node startButton = dialog.getDialogPane().lookupButton(startGameType);
-        startButton.setDisable(true);
+//        startButton.setDisable(true);
 
-        AtomicBoolean colValid = new AtomicBoolean(false);
-        AtomicBoolean rowValid = new AtomicBoolean(false);
+        AtomicBoolean colValid = new AtomicBoolean(true);
+        AtomicBoolean rowValid = new AtomicBoolean(true);
 
         columns.textProperty().addListener((colObservable, colOldValue, colNewValue) -> {
 //            colValid.set(colNewValue.matches("[1-9][0-9]*"));
@@ -270,6 +273,11 @@ public class MinesweeperApplication extends Application {
                 //Calculating game window size.
                 int w = Integer.parseInt(columns.getText());
                 int h = Integer.parseInt(rows.getText());
+
+                //When the user restarts it saves their last width, height they entered.
+                saveWidth = w;
+                saveHeight = h;
+
                 if((w > 0 && h > 0 && w < 60 && h < 40)){
                     width = Integer.parseInt(columns.getText()) * TILE_SIZE;
                     height = Integer.parseInt(rows.getText()) * TILE_SIZE;
