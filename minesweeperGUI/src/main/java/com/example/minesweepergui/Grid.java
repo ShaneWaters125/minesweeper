@@ -121,17 +121,6 @@ public class Grid {
             Tile tile = new Tile(x, y, TileENUM.EMPTY);
             checked.add(tile);
 
-//            for(int col = x-1; col <= x+1; col++){
-//                for(int row = y-1; row <= y+1; row++){
-//                    //Making sure we don't go off the grid
-//                    if(!(col < 0 || row < 0) && !(col > cols-1 || row > rows-1)){
-//                        if(tiles[col][row].getType() == TileENUM.BOMB){
-//                            nearBomb = true;
-//                        }
-//                    }
-//                }
-//            }
-
             //To make sure more tiles than intended are not revealed, we must check to see if the tile borders a bomb since we auto reveal every square around a press.
             if(calcBombs(x, y) > 0){
                 nearBomb = true;
